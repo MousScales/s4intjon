@@ -867,12 +867,12 @@
             <input type="email" class="form-input" id="email" placeholder="Enter your email address" required>
           </div>
           
-        </div>
+          </div>
         
         <div class="navigation">
           <button class="continue-btn" onclick="nextStep()" style="margin-left: auto;">Continue to shipping</button>
+          </div>
         </div>
-      </div>
       
       <!-- Step 2: Experience -->
       <div class="step" data-step="experience">
@@ -904,7 +904,7 @@
         <div class="navigation">
           <a href="#" class="back-link" onclick="prevStep()">← Back to contact</a>
           <button class="continue-btn" onclick="nextStep()">Continue to goals</button>
-        </div>
+      </div>
       </div>
       
       <!-- Step 3: Goals -->
@@ -1073,10 +1073,44 @@
         <a href="#">Privacy policy</a>
         <a href="#">Terms of service</a>
       </div>
+          </div>
     </div>
-  </div>
 
-<script>
+    <!-- Video Modal -->
+    <div class="video-modal" id="videoModal">
+      <div class="video-container">
+        <div class="video-header">
+          <div class="video-title">Welcome to s4intjon Community!</div>
+          <button class="video-close" onclick="closeVideoModal()">&times;</button>
+        </div>
+        
+        <div class="video-content">
+          <div class="video-player">
+            <video id="communityVideo" controls width="100%" style="border-radius: 8px;">
+              <source src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          
+          <div class="video-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="videoProgressFill"></div>
+            </div>
+            <div class="progress-text" id="videoProgressText">Please watch the entire video to continue</div>
+          </div>
+          
+          <div class="video-status" id="videoStatus">
+            Ready to join? Click Complete Purchase below.
+          </div>
+          
+          <button class="checkout-btn" id="finalPurchaseBtn" onclick="submitApplication()" style="display: none; margin-top: 20px; width: 100%;">
+            Complete Purchase
+          </button>
+        </div>
+      </div>
+    </div>
+
+ <script>
   // Primary webhook URLs to try
   // Form is served from this URL (for GET requests)
   const FORM_SERVE_URL = "https://ykmous.app.n8n.cloud/webhook-test/c897b190-576d-4ba4-bb34-e2f47e56b6c9";
@@ -1190,8 +1224,8 @@ function showError(errorId, message) {
 
 async function submitApplication() {
   console.log('=== SUBMIT APPLICATION START ===');
-  
-  const payload = {
+
+    const payload = {
     email: document.getElementById('email').value.trim(),
     firstName: document.getElementById('firstName').value.trim(),
     experience: document.getElementById('experience').value,
@@ -1211,23 +1245,40 @@ async function submitApplication() {
   submitBtn.textContent = 'Submitting...';
   submitBtn.disabled = true;
 
-  // Always show receipt regardless of webhook success/failure
-  // Try to submit to webhook in background, but don't wait for it
-  fetch(WEBHOOK_URL, {
-    method: 'POST',
-    mode: 'cors',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json, text/html, */*'
-    },
-    body: JSON.stringify(payload)
-  }).then(response => {
-    console.log('✅ Webhook submitted successfully:', response.status);
-  }).catch(error => {
-    console.log('❌ Webhook failed but continuing:', error.message);
-  });
+  // Submit to webhook with proper error handling
+  console.log(`🔄 Submitting to webhook: ${WEBHOOK_URL}`);
+  
+  try {
+    fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+        body: JSON.stringify(payload)
+    }).then(response => {
+      console.log('📡 Webhook response status:', response.status);
+      console.log('📡 Webhook response ok:', response.ok);
+      if (response.ok) {
+        console.log('✅ Webhook submitted successfully');
+      } else {
+        console.log('❌ Webhook failed with status:', response.status);
+      }
+      return response.text();
+    }).then(data => {
+      console.log('📦 Webhook response data:', data);
+    }).catch(error => {
+      console.log('❌ Webhook network error:', error.message);
+    });
+  } catch (error) {
+    console.log('❌ Webhook submission error:', error);
+  }
 
-  // Always show receipt immediately
+  // Close video modal if open
+  closeVideoModal();
+  
+  // Show receipt immediately (don't wait for webhook)
   showReceiptPage();
 }
 
@@ -1392,7 +1443,7 @@ async function handleSuccessfulSubmission(payload, data) {
           <div class="header">
             <div class="logo">
               <img src="https://raw.githubusercontent.com/MousScales/s4intjon/main/s4intjonheader.png" alt="S4INTJON" class="header-logo">
-            </div>
+        </div>
             <div class="subtitle">AI Ecom Blueprint</div>
             <div class="store-info">
               Online Community<br>
@@ -1719,14 +1770,6 @@ function showReceiptPage() {
         </div>
         
         <div class="total">
-          <div>
-            <span>SUBTOTAL</span>
-            <span>FREE</span>
-          </div>
-          <div>
-            <span>TAX</span>
-            <span>FREE</span>
-          </div>
         </div>
         
         <div class="footer">
@@ -1794,12 +1837,55 @@ function checkBudgetCompletion() {
   const motivation = document.getElementById('motivation').value.trim();
   const checkoutButton = document.getElementById('checkoutButton');
   
-  if (budget && motivation) {
-    checkoutButton.style.display = 'block';
-    checkoutButton.innerHTML = '<button class="checkout-btn" onclick="submitApplication()">Purchase</button>';
-  } else {
-    checkoutButton.style.display = 'none';
-  }
+      if (budget && motivation) {
+      checkoutButton.style.display = 'block';
+      checkoutButton.innerHTML = '<button class="checkout-btn" onclick="showVideoModal()">Watch Video to Continue</button>';
+    } else {
+      checkoutButton.style.display = 'none';
+    }
+}
+
+// Video modal functions
+function showVideoModal() {
+  console.log('Showing video modal');
+  const modal = document.getElementById('videoModal');
+  const video = document.getElementById('communityVideo');
+  const progressFill = document.getElementById('videoProgressFill');
+  const progressText = document.getElementById('videoProgressText');
+  const videoStatus = document.getElementById('videoStatus');
+  const purchaseBtn = document.getElementById('finalPurchaseBtn');
+  
+  modal.style.display = 'flex';
+  
+  // Reset video state
+  video.currentTime = 0;
+  progressFill.style.width = '0%';
+  progressText.textContent = 'Welcome to our community!';
+  videoStatus.textContent = 'Ready to join? Click Complete Purchase below.';
+  videoStatus.classList.add('completed');
+  purchaseBtn.style.display = 'block'; // Show button immediately
+  
+  // Track video progress (optional - for display only)
+  video.addEventListener('timeupdate', function() {
+    const progress = (video.currentTime / video.duration) * 100;
+    progressFill.style.width = progress + '%';
+    progressText.textContent = `Video progress: ${Math.round(progress)}%`;
+  });
+  
+  // Auto-play video
+  video.play().catch(function(error) {
+    console.log('Video autoplay failed:', error);
+  });
+}
+
+function closeVideoModal() {
+  console.log('Closing video modal');
+  const modal = document.getElementById('videoModal');
+  const video = document.getElementById('communityVideo');
+  
+  modal.style.display = 'none';
+  video.pause();
+  video.currentTime = 0;
 }
 
 // Initialize
