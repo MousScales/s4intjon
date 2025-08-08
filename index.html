@@ -1248,46 +1248,32 @@ async function submitApplication() {
   // Submit to webhook with proper error handling
   console.log(`🔄 Submitting to webhook: ${WEBHOOK_URL}`);
   
-    // Try multiple approaches to fix webhook submission
-  console.log('🔄 Attempting webhook submission...');
-  
-  // Method 1: Try with no-cors mode
+    // Submit JSON to webhook
   try {
-    fetch(WEBHOOK_URL, {
+    const response = await fetch(WEBHOOK_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/plain, */*'
       },
       body: JSON.stringify(payload)
-    }).then(response => {
-      console.log('✅ Webhook submitted with no-cors mode');
-    }).catch(error => {
-      console.log('❌ No-cors method failed:', error.message);
-      // Method 2: Try with different content type
-      tryFormDataSubmission();
-    });
-  } catch (error) {
-    console.log('❌ Initial webhook attempt failed:', error);
-    tryFormDataSubmission();
-  }
-  
-  function tryFormDataSubmission() {
-    console.log('🔄 Trying form-data submission...');
-    const formData = new FormData();
-    Object.keys(payload).forEach(key => {
-      formData.append(key, payload[key]);
     });
     
-    fetch(WEBHOOK_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: formData
-    }).then(response => {
-      console.log('✅ Form-data submission completed');
-    }).catch(error => {
-      console.log('❌ Form-data submission failed:', error.message);
-    });
+    console.log('📡 Webhook response status:', response.status);
+    console.log('📡 Webhook response ok:', response.ok);
+    
+    if (response.ok) {
+      console.log('✅ Webhook submitted successfully');
+      const responseData = await response.text();
+      console.log('📦 Webhook response data:', responseData);
+    } else {
+      console.log('❌ Webhook failed with status:', response.status);
+      const errorData = await response.text();
+      console.log('📦 Error response:', errorData);
+    }
+  } catch (error) {
+    console.log('❌ Webhook network error:', error.message);
+    console.log('📦 Full error details:', error);
   }
 
   // Close video modal if open
