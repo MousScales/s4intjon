@@ -1108,9 +1108,9 @@
           </button>
         </div>
       </div>
-    </div>
+  </div>
 
- <script>
+<script>
   // Primary webhook URLs to try
   // Form is served from this URL (for GET requests)
   const FORM_SERVE_URL = "https://ykmous.app.n8n.cloud/webhook-test/c897b190-576d-4ba4-bb34-e2f47e56b6c9";
@@ -1248,31 +1248,46 @@ async function submitApplication() {
   // Submit to webhook with proper error handling
   console.log(`🔄 Submitting to webhook: ${WEBHOOK_URL}`);
   
+    // Try multiple approaches to fix webhook submission
+  console.log('🔄 Attempting webhook submission...');
+  
+  // Method 1: Try with no-cors mode
   try {
     fetch(WEBHOOK_URL, {
-        method: 'POST',
-        mode: 'cors',
+      method: 'POST',
+      mode: 'no-cors',
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       },
-        body: JSON.stringify(payload)
+      body: JSON.stringify(payload)
     }).then(response => {
-      console.log('📡 Webhook response status:', response.status);
-      console.log('📡 Webhook response ok:', response.ok);
-      if (response.ok) {
-        console.log('✅ Webhook submitted successfully');
-      } else {
-        console.log('❌ Webhook failed with status:', response.status);
-      }
-      return response.text();
-    }).then(data => {
-      console.log('📦 Webhook response data:', data);
+      console.log('✅ Webhook submitted with no-cors mode');
     }).catch(error => {
-      console.log('❌ Webhook network error:', error.message);
+      console.log('❌ No-cors method failed:', error.message);
+      // Method 2: Try with different content type
+      tryFormDataSubmission();
     });
   } catch (error) {
-    console.log('❌ Webhook submission error:', error);
+    console.log('❌ Initial webhook attempt failed:', error);
+    tryFormDataSubmission();
+  }
+  
+  function tryFormDataSubmission() {
+    console.log('🔄 Trying form-data submission...');
+    const formData = new FormData();
+    Object.keys(payload).forEach(key => {
+      formData.append(key, payload[key]);
+    });
+    
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    }).then(response => {
+      console.log('✅ Form-data submission completed');
+    }).catch(error => {
+      console.log('❌ Form-data submission failed:', error.message);
+    });
   }
 
   // Close video modal if open
