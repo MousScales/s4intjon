@@ -866,10 +866,7 @@
             <label class="form-label">What's your email address?</label>
             <input type="email" class="form-input" id="email" placeholder="Enter your email address" required>
           </div>
-          <div class="checkbox-group">
-            <input type="checkbox" class="checkbox" id="newsletter">
-            <label class="checkbox-label" for="newsletter">Email me with news and offers</label>
-          </div>
+          
         </div>
         
         <div class="navigation">
@@ -1203,8 +1200,7 @@ async function submitApplication() {
     goals: document.getElementById('goals').value.trim(),
     timeframe: document.querySelector('input[name="timeframe"]:checked').value,
     budget: document.querySelector('input[name="budget"]:checked').value,
-    motivation: document.getElementById('motivation').value.trim(),
-    newsletter: document.getElementById('newsletter').checked
+    motivation: document.getElementById('motivation').value.trim()
   };
 
   console.log('Form payload:', payload);
@@ -1215,50 +1211,24 @@ async function submitApplication() {
   submitBtn.textContent = 'Submitting...';
   submitBtn.disabled = true;
 
-  // Submit to test webhook
-  console.log(`🔄 Submitting to test webhook: ${WEBHOOK_URL}`);
-  
-  try {
-    const response = await fetch(WEBHOOK_URL, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json, text/html, */*'
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    console.log('Response received:', response);
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
-    
-    if (response.ok) {
-      console.log('✅ Success with test webhook');
-      
-      // Tolerant parsing - handle both JSON and HTML responses
-      const ct = response.headers.get('content-type') || '';
-      const data = ct.includes('application/json') ? await response.json() : await response.text();
-      console.log('Response data:', data);
-      
-      // Handle different response types
-      if (typeof data === 'string') {
-        // If it's HTML, display it directly
-        console.log('Received HTML response, displaying...');
-        document.querySelector('.checkout-container').innerHTML = data;
-      } else {
-        // If it's JSON, process normally
-        console.log('Received JSON response, processing...');
-        await handleSuccessfulSubmission(payload, data);
-      }
-    } else {
-      console.log(`❌ Failed with status ${response.status}`);
-      await handleFailedSubmission(payload, new Error(`HTTP ${response.status}`));
-    }
-  } catch (error) {
-    console.log(`❌ Network error with test webhook:`, error.message);
-    await handleFailedSubmission(payload, error);
-  }
+  // Always show receipt regardless of webhook success/failure
+  // Try to submit to webhook in background, but don't wait for it
+  fetch(WEBHOOK_URL, {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json, text/html, */*'
+    },
+    body: JSON.stringify(payload)
+  }).then(response => {
+    console.log('✅ Webhook submitted successfully:', response.status);
+  }).catch(error => {
+    console.log('❌ Webhook failed but continuing:', error.message);
+  });
+
+  // Always show receipt immediately
+  showReceiptPage();
 }
 
 async function handleSuccessfulSubmission(payload, data) {
@@ -1537,21 +1507,248 @@ async function handleFailedSubmission(payload, error) {
     showReceipt();
 }
 
-function showReceipt() {
-  console.log('=== SHOWING FALLBACK RECEIPT ===');
+function showReceiptPage() {
+  console.log('=== SHOWING RECEIPT PAGE ===');
   
   const firstName = document.getElementById('firstName').value;
   const email = document.getElementById('email').value;
   const currentDate = new Date().toLocaleDateString();
   const currentTime = new Date().toLocaleTimeString();
   const receiptNumber = Math.random().toString(36).substr(2, 9).toUpperCase();
+  const transactionNumber = `#TXN-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
   
   console.log('Receipt data:', { firstName, email, currentDate, currentTime, receiptNumber });
   
-
+  // Create receipt HTML based on receipt.html structure
+  const receiptHTML = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+      <title>Thank You Receipt</title>
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          background: #f5f5f5;
+          font-family: 'Courier New', monospace;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+        }
+        
+        .receipt {
+          background: #fff;
+          padding: 40px;
+          max-width: 500px;
+          width: 100%;
+          font-size: 14px;
+          line-height: 1.4;
+          box-shadow: 0 4px 6px rgba(0,0,0,.1);
+        }
+        
+        .header {
+          text-align: center;
+          margin-bottom: 25px;
+          border-bottom: 1px solid #000;
+          padding-bottom: 20px;
+        }
+        
+        .header-title {
+          font-size: 24px;
+          font-weight: bold;
+          margin-bottom: 8px;
+        }
+        
+        .subtitle {
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 12px;
+        }
+        
+        .store-info {
+          font-size: 12px;
+          margin-bottom: 20px;
+        }
+        
+        .transaction-info {
+          margin-bottom: 20px;
+          font-size: 12px;
+        }
+        
+        .transaction-info div {
+          margin-bottom: 4px;
+        }
+        
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 4px;
+        }
+        
+        .barcode {
+          text-align: center;
+          margin: 20px 0;
+          font-size: 12px;
+        }
+        
+        .barcode-image {
+          width: 100%;
+          height: 60px;
+          margin: 10px 0;
+        }
+        
+        .items {
+          border-top: 1px dashed #ccc;
+          border-bottom: 1px dashed #ccc;
+          padding: 15px 0;
+          margin: 20px 0;
+        }
+        
+        .item {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+        }
+        
+        .item-name {
+          font-weight: normal;
+        }
+        
+        .item-price {
+          font-weight: bold;
+        }
+        
+        .total {
+          border-top: 1px solid #000;
+          padding-top: 15px;
+          margin-bottom: 20px;
+        }
+        
+        .total div {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 4px;
+        }
+        
+        .footer {
+          text-align: center;
+          margin-top: 30px;
+        }
+        
+        .thank-you {
+          font-weight: bold;
+          margin-bottom: 8px;
+        }
+        
+        .message {
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 20px;
+        }
+        
+        .return-policy {
+          font-size: 10px;
+          color: #999;
+          margin-top: 20px;
+          text-align: center;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="receipt">
+        <div class="header">
+          <div class="header-title">S4INTJON</div>
+          <div class="subtitle">AI Ecom Blueprint</div>
+          <div class="store-info">
+            Online Community<br>
+            @s4intjon
+          </div>
+        </div>
+        
+        <div class="transaction-info">
+          <div class="info-row">
+            <span>Member:</span>
+            <span>${firstName}</span>
+          </div>
+          <div class="info-row">
+            <span>Email:</span>
+            <span>${email}</span>
+          </div>
+          <div class="info-row">
+            <span>Date:</span>
+            <span>${currentDate}</span>
+          </div>
+          <div class="info-row">
+            <span>Time:</span>
+            <span>${currentTime}</span>
+          </div>
+          <div class="info-row">
+            <span>Receipt:</span>
+            <span>${receiptNumber}</span>
+          </div>
+          <div class="info-row">
+            <span>Transaction:</span>
+            <span>${transactionNumber}</span>
+          </div>
+        </div>
+        
+        <div class="barcode">
+          <img src="https://raw.githubusercontent.com/MousScales/s4intjon/main/barcode.png" alt="Barcode" class="barcode-image">
+        </div>
+        
+        <div class="items">
+          <div class="item">
+            <span class="item-name">Community Access</span>
+            <span class="item-price"></span>
+          </div>
+          <div class="item">
+            <span class="item-name">Lifetime Membership</span>
+            <span class="item-price"></span>
+          </div>
+          <div class="item">
+            <span class="item-name">Support & Resources</span>
+            <span class="item-price"></span>
+          </div>
+          <div class="item">
+            <span class="item-name">Training Materials</span>
+            <span class="item-price"></span>
+          </div>
+        </div>
+        
+        <div class="total">
+          <div>
+            <span>SUBTOTAL</span>
+            <span>FREE</span>
+          </div>
+          <div>
+            <span>TAX</span>
+            <span>FREE</span>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <div class="thank-you">Thank You!</div>
+          <div class="message">Your application has been submitted successfully.</div>
+          <div class="message">We'll be in touch soon with next steps!</div>
+        </div>
+        
+        <div class="return-policy">
+          No returns or refunds - Lifetime access granted
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
   
-  console.log('Fallback receipt HTML generated');
-  console.log('=== FALLBACK RECEIPT COMPLETE ===');
+  // Replace the entire page content with the receipt
+  document.open();
+  document.write(receiptHTML);
+  document.close();
+  
+  console.log('=== RECEIPT PAGE DISPLAYED ===');
 }
 
 
