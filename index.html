@@ -219,10 +219,15 @@
       font-size: 15px;
       background: var(--color-input);
       color: var(--color-text);
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       font-weight: 400;
       line-height: 1.5;
       font-family: var(--font-family);
+    }
+    
+    .form-input:focus {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
     }
     
     .form-input:focus {
@@ -660,8 +665,23 @@
       }
       
       .progress-bar {
-        flex-direction: column;
-        gap: 16px;
+        flex-direction: row;
+        gap: 8px;
+        padding: 16px;
+        overflow-x: auto;
+      }
+      
+      .progress-step {
+        font-size: 12px;
+        min-width: 60px;
+        flex-shrink: 0;
+      }
+      
+      .progress-step .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        margin-right: 6px;
       }
       
       .progress-bar::before {
@@ -766,6 +786,28 @@
       overflow: hidden;
     }
     
+    .checkout-btn:disabled {
+      background: linear-gradient(135deg, #9ca3af, #6b7280);
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .checkout-btn:disabled::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: loading 1.5s infinite;
+    }
+    
+    @keyframes loading {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
     .checkout-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 20px 25px -5px rgba(0,0,0,.2), 0 10px 10px -5px rgba(0,0,0,.1);
@@ -790,6 +832,88 @@
     .checkout-btn:hover::before {
       left: 100%;
     }
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+      70% {
+        transform: scale(0.9);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    /* Apply animations to elements */
+    .step.active {
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    .form-section {
+      animation: slideIn 0.4s ease-out;
+    }
+    
+    .progress-step.active {
+      animation: scaleIn 0.3s ease-out;
+    }
+    
+    .checkout-btn {
+      animation: scaleIn 0.3s ease-out;
+    }
+    
+    .video-modal.active {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    .video-container {
+      animation: bounceIn 0.5s ease-out;
+    }
+    
+    /* Receipt animation */
+    .receipt {
+      animation: fadeIn 0.6s ease-out;
+    }
+    
     /* Error message styles */
     .error-message {
       background: #fef2f2;
@@ -800,6 +924,7 @@
       margin-bottom: 16px;
       font-size: 14px;
       display: none;
+      animation: slideIn 0.3s ease-out;
     }
     
     .error-message.show {
@@ -870,7 +995,7 @@
           </div>
         
         <div class="navigation">
-          <button class="continue-btn" onclick="nextStep()" style="margin-left: auto;">Continue to shipping</button>
+          <button class="continue-btn" onclick="nextStep()" style="margin-left: auto;">Continue to Experience</button>
           </div>
         </div>
       
